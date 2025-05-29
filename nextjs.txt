@@ -468,7 +468,94 @@ Next.js me hum 3 tareeqon se data fetch karte hain:
 | `getServerSideProps` | **Every Request**         | Server-side rendering (SSR)  |
 | `getStaticPaths`     | **With `getStaticProps`** | Dynamic routes (SSG)         |
 
+
+
+## ✅ `getStaticProps` – **Static Generation (SSG)**
+
+### 🔹 Definition:
+
+Ye function **build time** pe run hota hai. Iska matlab: data ek **baar build ke waqt fetch hota hai**, phir har request pe static HTML serve hota hai.
+
+### 🧠 Kab use karte hain?
+
+* Jab data **baar-baar change nahi hota** (ya rarely hota hai)
+* Jaise: blog posts, product listings, landing pages
+
+### 🧩 Code Example:
+
+```js
+export async function getStaticProps() {
+  const res = await fetch('https://dummyjson.com/products/1');
+  const product = await res.json();
+
+  return {
+    props: {
+      product
+    }
+  };
+}
+```
+
 ---
+
+## ✅ `getServerSideProps` – **Server-side Rendering (SSR)**
+
+### 🔹 Definition:
+
+Ye function **har request par run hota hai**. Har baar page load hone se pehle **server se data fetch hota hai**.
+
+### 🧠 Kab use karte hain?
+
+* Jab data **frequently change hota hai**
+* Jab har user ke liye data **dynamic** ho (auth, dashboard)
+* Jaise: user profile, live stats, personalized content
+
+### 🧩 Code Example:
+
+```js
+export async function getServerSideProps(context) {
+  const res = await fetch('https://dummyjson.com/products/1');
+  const product = await res.json();
+
+  return {
+    props: {
+      product
+    }
+  };
+}
+```
+
+---
+
+## 🔄 Comparison Table:
+
+| Feature      | `getStaticProps` | `getServerSideProps`     |
+| ------------ | ---------------- | ------------------------ |
+| Run timing   | Build time       | On every request         |
+| Performance  | Fastest (cached) | Slower (fetch each time) |
+| Suitable for | Static data      | Real-time/dynamic data   |
+| SEO friendly | ✅ Yes            | ✅ Yes                    |
+| Data update  | Manual rebuild   | Always updated           |
+
+---
+
+## 💬 Simple Example:
+
+| Page Type           | Function Used                       |
+| ------------------- | ----------------------------------- |
+| Blog Post           | `getStaticProps`                    |
+| Logged-in Dashboard | `getServerSideProps`                |
+| Product Detail Page | `getStaticProps` + `getStaticPaths` |
+| News Feed           | `getServerSideProps`                |
+
+---
+
+### 🤔 Ek aur tip:
+
+> `getStaticProps` + `revalidate` = ISR (Incremental Static Regeneration) bhi use kar sakte ho real-time se near-static ke liye.
+
+
+
 
 ### 🧪 Scenario: Show Product Detail from ID
 
@@ -1097,3 +1184,132 @@ Ye SEO-friendly aur ultra-fast pages banata hai ✅
 | `ProductDetail`  | `export default` | Page render hone wala main component                    |
 | `getStaticPaths` | `export`         | Next.js ko batata hai kya kya pages generate karne hain |
 | `getStaticProps` | `export`         | Data fetch karke component ko props deta hai            |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+__________________________________ Next.js: Dynamic Routing (with SSG) _______________________________________
+
+Ab chalte hain iske **professional level use** ki taraf, jahan Next.js ki real power aati hai:
+➡️ **Dynamic Routes + getStaticPaths + getStaticProps**
+
+---
+
+## ✅ Next.js: Dynamic Routing (with SSG)
+
+### 🔥 Goal:
+
+Jab aap ke paas **multiple dynamic pages** ho (e.g. product list), aur aap har product ka **static page generate** karna chahen at build time, to use karte hain:
+
+* `getStaticPaths()`: batata hai **kaunse dynamic routes** generate karne hain
+* `getStaticProps()`: har route ke liye **data fetch** karta hai (static HTML me embed ho jata hai)
+
+---
+
+### 📦 Example Use Case: Products List
+
+Maan lo aapke paas products ka data hai:
+
+```js
+const products = [
+  { id: '1', title: 'iPhone 13' },
+  { id: '2', title: 'Samsung S22' },
+  { id: '3', title: 'OnePlus 11' },
+];
+```
+
+---
+
+## 🔧 File: `pages/product/[id].js`
+
+```jsx
+// pages/product/[id].js
+
+export async function getStaticPaths() {
+  const products = [
+    { id: '1' },
+    { id: '2' },
+    { id: '3' },
+  ];
+
+  const paths = products.map(product => ({
+    params: { id: product.id }
+  }));
+
+  return {
+    paths,
+    fallback: false, // agar koi path match na ho to 404 do
+  };
+}
+
+export async function getStaticProps({ params }) {
+  const products = [
+    { id: '1', title: 'iPhone 13' },
+    { id: '2', title: 'Samsung S22' },
+    { id: '3', title: 'OnePlus 11' },
+  ];
+
+  const product = products.find(p => p.id === params.id);
+
+  return {
+    props: {
+      product,
+    },
+  };
+}
+
+export default function ProductDetail({ product }) {
+  return (
+    <div>
+      <h1>{product.title}</h1>
+      <p>Product ID: {product.id}</p>
+    </div>
+  );
+}
+```
+
+---
+
+### 🔁 Flow:
+
+| Step               | Kya ho raha hai?                                              |
+| ------------------ | ------------------------------------------------------------- |
+| `getStaticPaths()` | Ye batata hai: `/product/1`, `/product/2`, etc. generate karo |
+| `getStaticProps()` | Har `id` ke liye product ka data laata hai                    |
+| `ProductDetail()`  | Component static data se render hota hai                      |
+
+---
+
+### 🎯 Kab Use Karte Hain?
+
+| Situation                  | Use                             |
+| -------------------------- | ------------------------------- |
+| SEO important ho           | ✅ Use SSG with `getStaticProps` |
+| Pages static ho sakte hon  | ✅ Use `getStaticPaths`          |
+| Blog, products, categories | ✅ Perfect match                 |
+
+---
+
+### 📝 Quick Tip:
+
+* `fallback: false`: agar route match na ho to 404
+* `fallback: true`: agar route runtime pe build ho
+* `fallback: 'blocking'`: wait karo aur tabhi page dikhao
+
